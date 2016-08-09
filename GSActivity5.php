@@ -7,4 +7,5 @@
  */
 define("ROOT", __DIR__);
 define("RoleStartIndex",4000);
+define("RoleCount",200);
 require_once(ROOT."/GSClient.php");

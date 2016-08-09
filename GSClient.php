@@ -32,7 +32,7 @@ class GSClient
         }else{
             $this->mPid = $pid;
         }
-        $this->mPid = "Test" . $this->mPid ;
+        $this->mPid = "QQ" . $this->mPid ;
 
         $this->client = new swoole_client(SWOOLE_SOCK_TCP, SWOOLE_SOCK_ASYNC);
 
@@ -186,7 +186,7 @@ define("ROOT", __DIR__);
 require_once(ROOT."/util.php");
 require_once(ROOT."/GSConfig.php");
 
-for($i = 0;$i<=250;$i++)
+for($i = 0;$i<=RoleCount;$i++)
 {
     $client = new GSClient($i + RoleStartIndex);
     unset($client);
