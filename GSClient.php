@@ -21,7 +21,7 @@ class GSClient
 
     public function __construct($pid) {
 
-        echo "创建用户{$pid} ]\n";
+        gslog("创建用户{$pid} ]\n");
 
         if ($pid < 10){
             $this->mPid = "000" . $pid;
@@ -32,7 +32,7 @@ class GSClient
         }else{
             $this->mPid = $pid;
         }
-        $this->mPid = "QQ" . $this->mPid ;
+        $this->mPid = "WW" . $this->mPid ;
 
         $this->client = new swoole_client(SWOOLE_SOCK_TCP, SWOOLE_SOCK_ASYNC);
 
@@ -51,12 +51,12 @@ class GSClient
     {
 
         if ($this->isGameServer){
-            echo "用户{$this->mPid} 连接游戏服务器成功\n";
+            gslog("用户{$this->mPid} 连接游戏服务器成功\n");
             // $msg = num2UInt32Str(28) . num2UInt32Str(31) . num2UInt16Str(8) . "test0001" . num2UInt16Str(8) . "12345678";
             // $this->sendMessage($msg);
             $this->sendMessage(32,writeStr($this->token));
         }else{
-            echo "用户{$this->mPid} 连接登陆服务器成功\n";
+            gslog("用户{$this->mPid} 连接登陆服务器成功\n");
             // $msg = num2UInt32Str(28) . num2UInt32Str(31) . num2UInt16Str(8) . "test0001" . num2UInt16Str(8) . "12345678";
             $this->sendMessage(31,writeStr($this->mPid) . writeStr("12345678"));
         }
@@ -85,7 +85,7 @@ class GSClient
 
     public function handleBuffer(&$data)
     {
-        echo "用户{$this->mPid} 收到消息总长度" . count($data) . "\n";
+        debug("用户{$this->mPid} 收到消息总长度" . count($data) . "\n");
         $headLen = 4;
         if(count($data) > $headLen)
         {
@@ -106,15 +106,14 @@ class GSClient
 
     public function dealCmd($cmdId,$data)
     {
-        echo "用户{$this->mPid} 收到消息{$cmdId}\n";
+        debug("用户{$this->mPid} 收到消息{$cmdId}\n");
         if($cmdId == 2)
         {
             //登陆游戏
             $serverIp = readStr($data);
             $serverPort = readShort($data);
-            echo "用户{$this->mPid} 连接游戏服务器{$serverIp} {$serverPort} \n";
+            debug("用户{$this->mPid} 连接游戏服务器{$serverIp} {$serverPort} \n");
             $this->token = readStr($data);
-            var_dump($this->token);
 
             $this->isGameServer = true;
             $this->client->connect($serverIp,intval($serverPort));
@@ -127,19 +126,19 @@ class GSClient
             if($entityType == 1){
                 $this->sendMessage(33,num2UInt16Str(2).writeStr($this->mPid));
             }elseif($entityType == 2){
-                echo "用户{$this->mPid}进入游戏成功\n";
+                debug("用户{$this->mPid}进入游戏成功\n");
             }
         }else if($cmdId == 4){
 
         }else if($cmdId == 5){
             //逻辑接口
             $resqId = readShort($data);
-            echo "用户{$this->mPid} 收到逻辑消息{$resqId}\n";
+            debug("用户{$this->mPid} 收到逻辑消息{$resqId}\n");
             if($resqId == 2){
                 $result = readByte($data);
-                echo "用户{$this->mPid} 登陆游戏返回{$result}\n";
+                debug("用户{$this->mPid} 登陆游戏返回{$result}\n");
                 if($result == 0 || $result == 15 || $result == 11){
-                    echo "用户{$this->mPid} 登陆成功\n";
+                    debug("用户{$this->mPid} 登陆成功\n");
                     $uid = readDouble($data);
                     $this->sendMessage(33,num2UInt16Str(5).writeDouble($uid));
                 }
@@ -148,7 +147,7 @@ class GSClient
                 $result = readByte($data);
                 if($result == 0){
                     //胜利退出副本
-                    echo "用户{$this->mPid} 副本胜利\n";
+                    debug("用户{$this->mPid} 副本胜利\n");
                     $this->sendMessage(33,num2UInt16Str(20).num2UInt16Str(2).writeStr("1;1;1247:1246:1245"));
                     $this->sendMessage(33,num2UInt16Str(20).num2UInt16Str(4).writeStr("1;;1:2:3"));
                 }
@@ -156,7 +155,7 @@ class GSClient
 
             }
         }else if($cmdId == 10){
-            echo "用户{$this->mPid} 数据同步完成\n";
+            debug("用户{$this->mPid} 数据同步完成\n");
             $this->sendMessage(33,num2UInt16Str(20).num2UInt16Str(2).writeStr("1;1;1247:1246:1245"));
             $this->sendMessage(33,num2UInt16Str(20).num2UInt16Str(4).writeStr("1;;1:2:3"));
         }
@@ -164,12 +163,12 @@ class GSClient
 
     public function onError()
     {
-        echo "用户{$this->mPid} 错误 {$this->client->errCode} \n";
+        gslog("用户{$this->mPid} 错误 {$this->client->errCode} \n");
     }
 
     public function onClose()
     {
-        echo "用户{$this->mPid} 断开\n";
+        gslog("用户{$this->mPid} 断开\n");
     }
 
     public function sendMessage($cmd,$msg)
@@ -178,13 +177,14 @@ class GSClient
         $data = $len . num2UInt32Str(intval($cmd)) . $msg;
         $this->client->send($data);
 
-        echo "用户{$this->mPid} 发送消息{$cmd} {$data}成功\n";
+        debug("用户{$this->mPid} 发送消息{$cmd} {$data}成功\n");
     }
 }
 
 define("ROOT", __DIR__);
 require_once(ROOT."/util.php");
 require_once(ROOT."/GSConfig.php");
+require_once(ROOT."/GSLogTool.php");
 
 for($i = 0;$i<=RoleCount;$i++)
 {
