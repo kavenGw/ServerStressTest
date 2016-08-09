@@ -86,7 +86,7 @@ class GSClient
         $headLen = 4;
         if(count($data) > $headLen)
         {
-            $len = $this->readInt($data);
+            $len = readInt($data);
             if(count($data) >= $len - 4)
             {
                 $this->onData(array_splice($data, 0,$len - 4));
@@ -97,7 +97,7 @@ class GSClient
 
     public function onData(&$data)
     {
-        $cmd = $this->readInt($data);
+        $cmd = readInt($data);
         $this->dealCmd($cmd, $data);
     }
 
@@ -107,10 +107,10 @@ class GSClient
         if($cmdId == 2)
         {
             //登陆游戏
-            $serverIp = $this->readStr($data);
-            $serverPort = $this->readShort($data);
+            $serverIp = readStr($data);
+            $serverPort = readShort($data);
             echo "用户{$this->mPid} 连接游戏服务器{$serverIp} {$serverPort} \n";
-            $this->token = $this->readStr($data);
+            $this->token = readStr($data);
             var_dump($this->token);
 
             $this->isGameServer = true;
@@ -120,45 +120,13 @@ class GSClient
             $this->sendMessage(33,num2UInt16Str(2).writeStr($this->mPid));
         }elseif($cmdId == 5){
             //逻辑接口
-            $resqId = $this->readShort($data);
+            $resqId = readShort($data);
             echo "收到逻辑消息{$resqId}\n";
             if($resqId == 2){
-                $result = $this->readByte($data);
+                $result = readByte($data);
                 echo "登陆游戏返回{$result}\n";
             }
         }
-    }
-
-    function readInt(&$data)
-    {
-        $IntArr = array_splice($data, 0,4);
-        return ($IntArr[0] << 24) + ($IntArr[1] << 16) + ($IntArr[2] << 8) + $IntArr[3];
-    }
-
-    function readShort(&$data)
-    {
-        $IntArr = array_splice($data, 0,2);
-        // $IntArr[0] << 8 + $IntArr[1];
-
-        return ($IntArr[0] << 8) + $IntArr[1];
-    }
-
-    function readByte(&$data)
-    {
-        $IntArr = array_splice($data, 0,1);
-        return $IntArr[0];
-    }
-
-    function readStr(&$data)
-    {
-        $len = $this->readShort($data);
-        $str = "";
-        for($i = 0;$i < $len;$i ++)
-        {
-            $val = array_splice($data,0,1);
-            $str .= chr($val[0]);
-        }
-        return $str;
     }
 
     public function onError()
