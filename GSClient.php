@@ -17,6 +17,8 @@ class GSClient
 
     private $token;
 
+    private $uid;
+
     public function __construct($pid) {
 
         echo "创建用户{$pid} ]\n";
@@ -27,9 +29,10 @@ class GSClient
             $this->mPid = "00" . $pid;
         }elseif($pid < 1000){
             $this->mPid = "0" . $pid;
+        }else{
+            $this->mPid = $pid;
         }
         $this->mPid = "Test" . $this->mPid ;
-        $this->mPid = "Test0004";
 
         $this->client = new swoole_client(SWOOLE_SOCK_TCP, SWOOLE_SOCK_ASYNC);
 
@@ -103,7 +106,7 @@ class GSClient
 
     public function dealCmd($cmdId,$data)
     {
-        echo "用户{$this->mPid}收到消息{$cmdId}\n";
+        echo "用户{$this->mPid} 收到消息{$cmdId}\n";
         if($cmdId == 2)
         {
             //登陆游戏
@@ -115,17 +118,47 @@ class GSClient
 
             $this->isGameServer = true;
             $this->client->connect($serverIp,intval($serverPort));
-        }elseif ($cmdId == 3){
+        }else if ($cmdId == 3){
+            $this->token = readStr($data);
+            $this->uid = readDouble($data);
+            $entityType = readShort($data);
+            // $entityId = readInt($data);
             //创建角色
-            $this->sendMessage(33,num2UInt16Str(2).writeStr($this->mPid));
-        }elseif($cmdId == 5){
+            if($entityType == 1){
+                $this->sendMessage(33,num2UInt16Str(2).writeStr($this->mPid));
+            }elseif($entityType == 2){
+                echo "用户{$this->mPid}进入游戏成功\n";
+            }
+        }else if($cmdId == 4){
+
+        }else if($cmdId == 5){
             //逻辑接口
             $resqId = readShort($data);
-            echo "收到逻辑消息{$resqId}\n";
+            echo "用户{$this->mPid} 收到逻辑消息{$resqId}\n";
             if($resqId == 2){
                 $result = readByte($data);
-                echo "登陆游戏返回{$result}\n";
+                echo "用户{$this->mPid} 登陆游戏返回{$result}\n";
+                if($result == 0 || $result == 15 || $result == 11){
+                    echo "用户{$this->mPid} 登陆成功\n";
+                    $uid = readDouble($data);
+                    $this->sendMessage(33,num2UInt16Str(5).writeDouble($uid));
+                }
+            }else if($resqId == 25){
+                $msgId = readShort($data);
+                $result = readByte($data);
+                if($result == 0){
+                    //胜利退出副本
+                    echo "用户{$this->mPid} 副本胜利\n";
+                    $this->sendMessage(33,num2UInt16Str(20).num2UInt16Str(2).writeStr("1;1;1247:1246:1245"));
+                    $this->sendMessage(33,num2UInt16Str(20).num2UInt16Str(4).writeStr("1;;1:2:3"));
+                }
+            }else if($resqId == 5){
+
             }
+        }else if($cmdId == 10){
+            echo "用户{$this->mPid} 数据同步完成\n";
+            $this->sendMessage(33,num2UInt16Str(20).num2UInt16Str(2).writeStr("1;1;1247:1246:1245"));
+            $this->sendMessage(33,num2UInt16Str(20).num2UInt16Str(4).writeStr("1;;1:2:3"));
         }
     }
 
@@ -153,7 +186,7 @@ define("ROOT", __DIR__);
 require_once(ROOT."/util.php");
 require_once(ROOT."/GSConfig.php");
 
-for($i = 4;$i<=4;$i++)
+for($i = 0;$i<=250;$i++)
 {
     $client = new GSClient($i + RoleStartIndex);
     unset($client);

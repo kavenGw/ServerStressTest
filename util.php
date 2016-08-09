@@ -42,6 +42,18 @@ function writeStr($str)
 		return num2UInt16Str(strlen($str)) . $str;
 }
 
+function writeDouble($val)
+{
+		$ret = "";
+		for($i = 1;$i <= 8;$i++){
+				$p = pow(256,8-$i);
+				$val2 = floor($val / $p);
+				$ret .= pack("C",$val2);
+				$val = $val - $val2 * $p;
+		}
+		return $ret;
+}
+
 function readInt(&$data)
 {
 		$IntArr = array_splice($data, 0,4);
@@ -60,6 +72,16 @@ function readByte(&$data)
 {
 		$IntArr = array_splice($data, 0,1);
 		return $IntArr[0];
+}
+
+function readDouble(&$data)
+{
+		$sum = 0;
+		for($i = 1;$i<=8;$i++){
+				$value = readByte($data) * pow(256,8-$i);
+				$sum += $value;
+		}
+		return $sum;
 }
 
 function readStr(&$data)
